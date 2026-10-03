@@ -1,0 +1,17 @@
+# Credentials & Local Configuration
+config/migration.config.json
+python/config/migration.config.json
+*.local.json
+
+# Exports & Rollback Journals
+exports/
+python/exports/
+*.rollback.json
+out.json
+*.export.json
+
+# Python & IDE artifacts
+__pycache__/
+*.pyc
+.vscode/
+*.log

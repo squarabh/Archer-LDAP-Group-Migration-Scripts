@@ -1,0 +1,11 @@
+{
+  "_comment": "Template — copy to migration.config.json and fill in. No secrets are stored by the scripts.",
+  "source": {
+    "server": "SOURCE-SQL-HOST",
+    "database": "SOURCEInstanceDB"
+  },
+  "target": {
+    "server": "TARGET-SQL-HOST",
+    "database": "TARGETInstanceDB"
+  }
+}
