@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here. Dates are UTC.
 
-## [Unreleased]
+## [1.0.1] - 2026-10-03
 - Staging tables hardened: `#Src`/`#SrcHier` (and `#RollbackGuids`/`#RollbackEdges`)
   carry primary keys so duplicate pastes fail fast; `#Src.group_name` sized to
   `NVARCHAR(256)` to match `tblGroup`.
