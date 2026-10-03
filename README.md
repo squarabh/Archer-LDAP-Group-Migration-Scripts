@@ -50,6 +50,36 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 | **Rollback Tracking** | Automated `<input>.rollback.json` journal | T-SQL rollback script with dynamic FK check |
 | **Guide & Runbook** | **[View Python Guide](python/README.md)** | **[View SQL Guide](sql/README.md)** |
 
+### Process Overview
+
+Python pipeline (automated CLI, JSON-based):
+
+```mermaid
+flowchart LR
+    S["SOURCE Archer DB<br/>read-only access"] --> E["Export-ArcherLdapGroups.py<br/>writes groups.json"]
+    E --> J["groups.json<br/>groups + hierarchy + counts"]
+    J --> V["Import script with --verify-only<br/>TARGET DB, zero writes"]
+    V --> I["Import script<br/>creates placeholders + edges<br/>writes rollback journal"]
+    I --> P["Install Archer package<br/>permissions auto-map on GUID"]
+    P --> R{"Revert needed?"}
+    R -->|Before package install| B["Rollback script + journal<br/>deletes edges, then groups"]
+    R -->|After package install| M["Manual removal, or<br/>backup package, or DB restore"]
+```
+
+SQL pipeline (SSMS-only, zero dependencies):
+
+```mermaid
+flowchart LR
+    S["SOURCE Archer DB<br/>SSMS or sqlcmd"] --> E["Export-ArcherLdapGroups.sql<br/>emits INSERT lines"]
+    E --> C["Copy INSERT INTO #Src<br/>and INSERT INTO #SrcHier lines"]
+    C --> D["Paste into Import script<br/>Section 3 and Section 4"]
+    D --> I["Execute on TARGET DB<br/>analysis, insert, verify output"]
+    I --> P["Install Archer package<br/>permissions auto-map on GUID"]
+    P --> R{"Revert needed?"}
+    R -->|Before package install| B["Rollback script + GUID list<br/>FK-checked delete"]
+    R -->|After package install| M["Manual removal, or<br/>backup package, or DB restore"]
+```
+
 ---
 
 ## 3. Rollback & Database Integrity Mechanics

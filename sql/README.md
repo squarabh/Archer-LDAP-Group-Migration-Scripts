@@ -38,6 +38,34 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
 
 ## 3. Step-by-Step Migration Guide
 
+SQL pipeline at a glance:
+
+```mermaid
+flowchart LR
+    S["SOURCE Archer DB<br/>SSMS or sqlcmd"] --> E["Export-ArcherLdapGroups.sql<br/>emits INSERT lines"]
+    E --> C["Copy INSERT INTO #Src<br/>and INSERT INTO #SrcHier lines"]
+    C --> D["Paste into Import script<br/>Section 3 and Section 4"]
+    D --> I["Execute on TARGET DB<br/>analysis, insert, verify output"]
+    I --> P["Install Archer package<br/>permissions auto-map on GUID"]
+    P --> R{"Revert needed?"}
+    R -->|Before package install| B["Rollback script + GUID list<br/>FK-checked delete"]
+    R -->|After package install| M["Manual removal, or<br/>backup package, or DB restore"]
+```
+
+Equivalent Python pipeline (see the [Python sub-project](../python/README.md) for the automated CLI path):
+
+```mermaid
+flowchart LR
+    S["SOURCE Archer DB<br/>read-only access"] --> E["Export-ArcherLdapGroups.py<br/>writes groups.json"]
+    E --> J["groups.json<br/>groups + hierarchy + counts"]
+    J --> V["Import script with --verify-only<br/>TARGET DB, zero writes"]
+    V --> I["Import script<br/>creates placeholders + edges<br/>writes rollback journal"]
+    I --> P["Install Archer package<br/>permissions auto-map on GUID"]
+    P --> R{"Revert needed?"}
+    R -->|Before package install| B["Rollback script + journal<br/>deletes edges, then groups"]
+    R -->|After package install| M["Manual removal, or<br/>backup package, or DB restore"]
+```
+
 ### Step 1: Extract from Source Database
 1. Open SSMS and connect to the **SOURCE** Archer database (e.g., `ArcherProduction`).
 2. Open [`Export-ArcherLdapGroups.sql`](Export-ArcherLdapGroups.sql).
@@ -58,6 +86,23 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
    INSERT INTO #Src VALUES (N'Example-Entity-Group', 'CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC');
    /* >>> END OF PASTED ROWS <<< */
    ```
+   The Section 4 block in the script shows the exact hierarchy format:
+   ```sql
+   /* >>> PASTE HIERARCHY ROWS FROM Export-ArcherLdapGroups.sql BELOW THIS LINE <<< */
+   INSERT INTO #SrcHier VALUES ('AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA', 'BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB');
+   INSERT INTO #SrcHier VALUES ('AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA', 'CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC');
+   /* >>> END OF PASTED HIERARCHY ROWS <<< */
+   ```
+   Each row is `(parent_group_guid, child_group_guid)` — GUIDs, not IDs, because
+   `group_id` values differ between instances while GUIDs are the stable key.
+   On execution you will see:
+   ```
+   Hierarchy payload: 2 edge(s) staged.
+   ...
+   Hierarchy edges added: 2
+   ```
+   Edges whose GUIDs are missing from `dbo.tblGroup` are skipped and listed
+   (they never fail the script).
 4. Execute the script (`F5`).
 5. Review the execution summary:
    - **Pre-import analysis:** Displays which groups are already matched and which are missing.
