@@ -81,6 +81,24 @@ BEGIN
 
     PRINT '';
     PRINT '----------------------------------------------------------------------------';
+    PRINT '--- COPY THE HIERARCHY LINES BELOW AND PASTE INTO Section 4 OF Import   ---';
+    PRINT '----------------------------------------------------------------------------';
+
+    -- Generate hierarchy INSERTs keyed by GUID (stable across instances).
+    -- Mirrors the Python exporter: any edge touching the exported LDAP set.
+    SELECT
+        'INSERT INTO #SrcHier VALUES (''' +
+        CAST(p.guid AS VARCHAR(36)) + ''', ''' +
+        CAST(c.guid AS VARCHAR(36)) + ''');' AS [Copy_Paste_Hierarchy_For_Import]
+    FROM dbo.tblGroupRelationships r
+    JOIN dbo.tblGroup p ON p.group_id = r.parent_group_id
+    JOIN dbo.tblGroup c ON c.group_id = r.child_group_id
+    WHERE (p.ldap_config_id IS NOT NULL AND p.[system] = 0 AND p.everyone = 0)
+       OR (c.ldap_config_id IS NOT NULL AND c.[system] = 0 AND c.everyone = 0)
+    ORDER BY p.group_name, c.group_name;
+
+    PRINT '';
+    PRINT '----------------------------------------------------------------------------';
     PRINT '--- METADATA & DOMAIN MAPPING (FOR AUDIT / REFERENCE ONLY)               ---';
     PRINT '----------------------------------------------------------------------------';
 

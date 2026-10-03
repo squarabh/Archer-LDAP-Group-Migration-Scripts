@@ -91,7 +91,27 @@ END
 PRINT 'Payload loaded: ' + CAST(@src_count AS VARCHAR(10)) + ' group(s) staged.';
 PRINT '';
 
--- 4. Pre-Import Analysis: Matched vs Missing
+-- 4. Staging Table: Paste Exported Hierarchy Edges Here (optional)
+IF OBJECT_ID('tempdb..#SrcHier') IS NOT NULL DROP TABLE #SrcHier;
+CREATE TABLE #SrcHier (
+    parent_guid UNIQUEIDENTIFIER NOT NULL,
+    child_guid UNIQUEIDENTIFIER NOT NULL
+);
+
+/* ----------------------------------------------------------------------------
+   >>> PASTE HIERARCHY ROWS FROM Export-ArcherLdapGroups.sql BELOW THIS LINE <<<
+   (leave empty if the source has no hierarchy — edges are optional)
+   ---------------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------------
+   >>> END OF PASTED HIERARCHY ROWS <<<
+   ---------------------------------------------------------------------------- */
+
+DECLARE @hier_count INT = (SELECT COUNT(*) FROM #SrcHier);
+PRINT 'Hierarchy payload: ' + CAST(@hier_count AS VARCHAR(10)) + ' edge(s) staged.';
+PRINT '';
+
+-- 5. Pre-Import Analysis: Matched vs Missing
 PRINT '----------------------------------------------------------------------------';
 PRINT '--- PRE-IMPORT ANALYSIS: MATCHED VS MISSING                              ---';
 PRINT '----------------------------------------------------------------------------';
@@ -132,7 +152,7 @@ BEGIN
 END
 PRINT '';
 
--- 5. Dynamic Audit Login Resolution
+-- 6. Dynamic Audit Login Resolution
 DECLARE @admin_login INT = 2;
 IF NOT EXISTS (SELECT 1 FROM dbo.tblUser WHERE user_id = @admin_login)
 BEGIN
@@ -145,7 +165,7 @@ BEGIN
 END
 PRINT 'Audit Login ID to use: ' + CAST(@admin_login AS VARCHAR(10));
 
--- 6. Insert Missing Groups
+-- 7. Insert Missing Groups
 PRINT '----------------------------------------------------------------------------';
 PRINT '--- INSERTING MISSING PLACEHOLDER GROUPS                                        ---';
 PRINT '----------------------------------------------------------------------------';
@@ -173,7 +193,36 @@ DECLARE @inserted_count INT = @@ROWCOUNT;
 PRINT 'Newly Inserted Groups: ' + CAST(@inserted_count AS VARCHAR(10));
 PRINT '';
 
--- 7. Verification Check (confirms every source GUID now exists in dbo.tblGroup,
+-- 8. Insert Hierarchy Edges (resolved by GUID, mirroring the Python importer)
+PRINT '----------------------------------------------------------------------------';
+PRINT '--- INSERTING HIERARCHY EDGES                                          ---';
+PRINT '----------------------------------------------------------------------------';
+
+INSERT INTO dbo.tblGroupRelationships (parent_group_id, child_group_id, create_date, create_login)
+SELECT pg.group_id, cg.group_id, GETDATE(), @admin_login
+FROM #SrcHier h
+JOIN dbo.tblGroup pg ON pg.guid = h.parent_guid
+JOIN dbo.tblGroup cg ON cg.guid = h.child_guid
+WHERE NOT EXISTS (SELECT 1 FROM dbo.tblGroupRelationships r
+                  WHERE r.parent_group_id = pg.group_id AND r.child_group_id = cg.group_id);
+
+DECLARE @edges_added INT = @@ROWCOUNT;
+PRINT 'Hierarchy edges added: ' + CAST(@edges_added AS VARCHAR(10));
+IF EXISTS (SELECT 1 FROM #SrcHier h
+           LEFT JOIN dbo.tblGroup pg ON pg.guid = h.parent_guid
+           LEFT JOIN dbo.tblGroup cg ON cg.guid = h.child_guid
+           WHERE pg.group_id IS NULL OR cg.group_id IS NULL)
+BEGIN
+    PRINT 'NOTE: some staged edges reference GUIDs missing from dbo.tblGroup and were skipped.';
+    SELECT h.parent_guid AS [Unresolved_Parent_GUID], h.child_guid AS [Unresolved_Child_GUID]
+    FROM #SrcHier h
+    LEFT JOIN dbo.tblGroup pg ON pg.guid = h.parent_guid
+    LEFT JOIN dbo.tblGroup cg ON cg.guid = h.child_guid
+    WHERE pg.group_id IS NULL OR cg.group_id IS NULL;
+END
+PRINT '';
+
+-- 9. Verification Check (confirms every source GUID now exists in dbo.tblGroup,
 --    which is what the package installer matches on)
 PRINT '----------------------------------------------------------------------------';
 PRINT '--- VERIFICATION (package installer GUID match check)                  ---';

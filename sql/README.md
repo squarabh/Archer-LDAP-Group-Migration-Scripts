@@ -15,11 +15,12 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
   - Name collision detection.
   - Preflight permission guards (`db_datawriter` / `db_owner` / `sysadmin`).
   - Dynamic `sys.foreign_keys` inspection for safe rollback.
-- **Known SQL-path limitations (Python-only features):** hierarchy edges
-  (`tblGroupRelationships`) are not migrated — re-created placeholders are flat
-  (packaging ignores hierarchy, so installs still map); no `--fix-guids`
-  equivalent (same-name/wrong-GUID rows are skipped, never overwritten);
-  no automatic rollback journal (paste GUIDs into the rollback script manually).
+- **Known SQL-path limitations (Python-only features):** no `--fix-guids`
+  equivalent (same-name/wrong-GUID rows are skipped, never overwritten — the
+  Python importer can repair them with `--fix-guids`); no automatic rollback
+  journal (paste GUIDs into the rollback script manually). Hierarchy edges
+  (`tblGroupRelationships`) **are** migrated: Export emits `INSERT INTO #SrcHier`
+  lines and Import recreates them resolved by GUID, same as the Python importer.
 
 ---
 
@@ -40,12 +41,14 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
 2. Open [`Export-ArcherLdapGroups.sql`](Export-ArcherLdapGroups.sql).
 3. Ensure results mode is set to **Results to Text** (`Ctrl + T`) or **Results to Grid** (`Ctrl + D`).
 4. Execute the script (`F5`).
-5. Copy the generated `INSERT INTO #Src VALUES (...)` lines from the output.
+5. Copy the generated `INSERT INTO #Src VALUES (...)` lines **and** the
+   `INSERT INTO #SrcHier VALUES (...)` hierarchy lines from the output.
 
 ### Step 2: Import into Target Database
 1. Open SSMS and connect to the **TARGET** Archer database (e.g., `ArcherTarget`).
 2. Open [`Import-ArcherLdapGroups.sql`](Import-ArcherLdapGroups.sql).
-3. Paste the copied rows into Section 3:
+3. Paste the copied rows into Section 3 (`#Src`), and the copied hierarchy rows
+   into Section 4 (`#SrcHier`, optional — leave empty if the source is flat):
    ```sql
    /* >>> PASTE ROWS FROM Export-ArcherLdapGroups.sql BELOW THIS LINE <<< */
    INSERT INTO #Src VALUES (N'Example Finance Group', 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA');
@@ -58,6 +61,7 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
    - **Pre-import analysis:** Displays which groups are already matched and which are missing.
    - **Collision warnings:** Flags any groups sharing the same name but possessing different GUIDs.
    - **Newly inserted count:** Shows how many records were inserted into `dbo.tblGroup`.
+   - **Hierarchy edges added:** Shows how many parent/child edges were recreated (plus any skipped unresolvable GUIDs).
    - **Verification check:** Confirms that all source GUIDs are now present in `dbo.tblGroup`.
 
 ### Step 3: Install the Archer Package
