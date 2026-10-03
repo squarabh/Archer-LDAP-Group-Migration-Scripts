@@ -54,30 +54,52 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 
 Python pipeline (automated CLI, JSON-based):
 
-```mermaid
-flowchart LR
-    S["SOURCE Archer DB<br/>read-only access"] --> E["Export-ArcherLdapGroups.py<br/>writes groups.json"]
-    E --> J["groups.json<br/>groups + hierarchy + counts"]
-    J --> V["Import script with --verify-only<br/>TARGET DB, zero writes"]
-    V --> I["Import script<br/>creates placeholders + edges<br/>writes rollback journal"]
-    I --> P["Install Archer package<br/>permissions auto-map on GUID"]
-    P --> R{"Revert needed?"}
-    R -->|Before package install| B["Rollback script + journal<br/>deletes edges, then groups"]
-    R -->|After package install| M["Manual removal, or<br/>backup package, or DB restore"]
+```
+SOURCE Archer DB (read-only)
+        |
+        v
+Export-ArcherLdapGroups.py  -->  groups.json (groups + hierarchy + counts)
+        |
+        v
+Import script --verify-only on TARGET DB (zero writes)
+        |
+        v
+Import script on TARGET DB
+  (creates placeholders + edges, writes rollback journal)
+        |
+        v
+Install Archer package (permissions auto-map on GUID)
+        |
+        v
+Revert needed?
+  |-- before package install: Rollback script + journal
+  |                             (deletes edges, then groups)
+  |-- after package install:  manual removal, backup-package
+                                reinstall, or DB restore
 ```
 
 SQL pipeline (SSMS-only, zero dependencies):
 
-```mermaid
-flowchart LR
-    S["SOURCE Archer DB<br/>SSMS or sqlcmd"] --> E["Export-ArcherLdapGroups.sql<br/>emits INSERT lines"]
-    E --> C["Copy INSERT INTO #Src<br/>and INSERT INTO #SrcHier lines"]
-    C --> D["Paste into Import script<br/>Section 3 and Section 4"]
-    D --> I["Execute on TARGET DB<br/>analysis, insert, verify output"]
-    I --> P["Install Archer package<br/>permissions auto-map on GUID"]
-    P --> R{"Revert needed?"}
-    R -->|Before package install| B["Rollback script + GUID list<br/>FK-checked delete"]
-    R -->|After package install| M["Manual removal, or<br/>backup package, or DB restore"]
+```
+SOURCE Archer DB (SSMS or sqlcmd)
+        |
+        v
+Export-ArcherLdapGroups.sql  -->  copy INSERT INTO #Src
+                                   + INSERT INTO #SrcHier lines
+        |
+        v
+Paste into Import script (Section 3 + Section 4)
+  -->  execute on TARGET DB (analysis, insert, verify output)
+        |
+        v
+Install Archer package (permissions auto-map on GUID)
+        |
+        v
+Revert needed?
+  |-- before package install: Rollback script + GUID list
+  |                             (FK-checked delete)
+  |-- after package install:  manual removal, backup-package
+                                reinstall, or DB restore
 ```
 
 ---
