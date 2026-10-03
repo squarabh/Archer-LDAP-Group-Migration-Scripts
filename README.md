@@ -1,6 +1,6 @@
 # Archer LDAP Group Migration Toolkit
 
-An enterprise solution for migrating Archer LDAP groups across Archer GRC instances (such as staging, QA, dev, or air-gapped instances outside the Active Directory network) as **local stub groups with exact source GUIDs**.
+An enterprise solution for migrating Archer LDAP groups across Archer GRC instances (such as staging, QA, dev, or air-gapped instances outside the Active Directory network) as **local placeholder groups with exact source GUIDs**.
 
 This toolkit eliminates the classic Archer Application Packaging installation failure:
 > `ValidationSeverity.Error: LDAPGroupNotCreatable: Group {sourceGroupId} is an LDAP group and can't be created.`
@@ -26,10 +26,10 @@ When exporting an Archer application, any field permissions, layout access rules
 ```
 During package installation on a target instance:
 1. **Key Resolution (`KeyManager.cs`):** Archer's `GroupGuidLookup` queries `dbo.tblGroup` by GUID (`groupBroker.GetGroupsByGuid`). If a group with that exact GUID is found, Archer immediately associates the package permissions with the target `group_id`.
-2. **The Failure Point (`GroupInstaller.cs`):** If the group is missing, Archer attempts to create it. For local groups, it creates a new stub. However, for LDAP groups (having a non-empty `Domain`), Archer halts execution:
+2. **The Failure Point (`GroupInstaller.cs`):** If the group is missing, Archer attempts to create it. For local groups, it creates a new placeholder. However, for LDAP groups (having a non-empty `Domain`), Archer halts execution:
    ```csharp
    if (packageGroup.Domain == null || packageGroup.Domain.Trim() == string.Empty) {
-       // Local group: creates stub
+       // Local group: creates placeholder
    } else {
        // LDAP group: Hard error!
        requestResult.ValidationMessages.Add(new ValidationMessage(
@@ -39,8 +39,8 @@ During package installation on a target instance:
    ```
    Because target instances outside the Active Directory network cannot perform LDAP synchronization, the installation fails.
 
-### The Solution: Offline Local Stub Seeding
-By pre-creating local stub records in `dbo.tblGroup` using the **exact source GUIDs** (with `ldap_config_id = NULL` and `distinguished_name = NULL`):
+### The Solution: Offline Local Placeholder Seeding
+By pre-creating local placeholder records in `dbo.tblGroup` using the **exact source GUIDs** (with `ldap_config_id = NULL` and `distinguished_name = NULL`):
 - `KeyManager` finds the matching GUID immediately in `dbo.tblGroup`.
 - `GroupInstaller.CreateGroup` is completely bypassed.
 - The Archer application package installs cleanly with zero errors.
@@ -67,7 +67,7 @@ By pre-creating local stub records in `dbo.tblGroup` using the **exact source GU
 ### Can you revert back to the original stage?
 
 #### Before Package Installation: **YES**
-- Unreferenced stubs can be safely deleted using either the Python rollback tool (`Rollback-ArcherLdapGroups.py`) or the SQL rollback script (`Rollback-ArcherLdapGroups.sql`).
+- Unreferenced placeholders can be safely deleted using either the Python rollback tool (`Rollback-ArcherLdapGroups.py`) or the SQL rollback script (`Rollback-ArcherLdapGroups.sql`).
 - Deletions are executed in strict dependency order: hierarchy edges &rarr; created groups (&rarr; restored original GUIDs in the Python path, which supports `--fix-guids`).
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**
@@ -103,7 +103,7 @@ By pre-creating local stub records in `dbo.tblGroup` using the **exact source GU
 
 ### Round-Trip Packaging (Target &rarr; Source)
 - If an application configured on the target instance is later packaged and brought back to the source instance, will it automap?
-- **Yes.** Because the stub group in the target instance shares the exact same GUID as the source LDAP group, the source instance's `KeyManager` will match the GUID immediately on return.
+- **Yes.** Because the placeholder group in the target instance shares the exact same GUID as the source LDAP group, the source instance's `KeyManager` will match the GUID immediately on return.
 
 ---
 
@@ -119,7 +119,7 @@ By pre-creating local stub records in `dbo.tblGroup` using the **exact source GU
 │   ├── README.md                  # Comprehensive Python setup and CLI guide
 │   ├── scripts/
 │   │   ├── Export-ArcherLdapGroups.py    # Read-only source extractor
-│   │   ├── Import-ArcherLdapGroups.py    # Idempotent stub importer & verifier
+│   │   ├── Import-ArcherLdapGroups.py    # Idempotent placeholder importer & verifier
 │   │   └── Rollback-ArcherLdapGroups.py  # Journal-driven rollback utility
 │   ├── config/
 │   │   └── migration.config.template.json# Config template for DB connections

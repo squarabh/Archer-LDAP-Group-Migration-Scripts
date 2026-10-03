@@ -17,14 +17,14 @@ each step guarded by re-checking current state (safe to run twice).
 
 ## When rollback succeeds
 
-- Run **before** installing the package. Created stubs are unreferenced, so
+- Run **before** installing the package. Created placeholders are unreferenced, so
   `DELETE` succeeds and `leftover = 0`. Validated end-to-end (create →
   `check-only` → rollback → `leftover 0`, real groups untouched).
 
 ## When rollback is BLOCKED (by design)
 
 Once the package is installed, rows like `tblXEventActionGroup(group_id)`
-reference the new stubs. All 24 foreign keys to `tblGroup` are `NO ACTION`, so SQL
+reference the new placeholders. All 24 foreign keys to `tblGroup` are `NO ACTION`, so SQL
 Server itself refuses the delete. The rollback script automatically and dynamically
 inspects `sys.foreign_keys` across all tables pointing to `dbo.tblGroup` and aborts
 with exit 2 listing every blocking referencer:
@@ -52,7 +52,7 @@ journal-created hierarchy edges.
 
 - Direct SQL bypasses `GroupBroker` side effects (task-permission precompute,
   content-permission recalculation jobs, `UserFieldPermission` cache flush,
-  security-event log). For **empty new stubs** there is nothing to recalculate,
+  security-event log). For **empty new placeholders** there is nothing to recalculate,
   and the package install itself runs through the brokers afterwards, which
   trigger those jobs for the installed authorizations. No manual recalc needed.
 - If you import groups that will carry `cascade_group=1` authorizations with

@@ -1,6 +1,6 @@
 # Archer LDAP Group Migration — Python Sub-Project
 
-An automated, cross-platform CLI toolkit for migrating Archer LDAP groups across instances (e.g., to air-gapped, staging, or cross-domain instances outside the Active Directory network) as **local stub groups with exact source GUIDs**.
+An automated, cross-platform CLI toolkit for migrating Archer LDAP groups across instances (e.g., to air-gapped, staging, or cross-domain instances outside the Active Directory network) as **local placeholder groups with exact source GUIDs**.
 
 This sub-project provides automated JSON-based extraction, idempotent importing, preflight authentication/permission validation, and journal-driven rollback.
 
@@ -44,7 +44,7 @@ python/
     example_export.json             # Sanitized reference export structure
   scripts/
     Export-ArcherLdapGroups.py      # Extracts LDAP groups to JSON
-    Import-ArcherLdapGroups.py      # Dry-runs and imports stub groups into target DB
+    Import-ArcherLdapGroups.py      # Dry-runs and imports placeholder groups into target DB
     Rollback-ArcherLdapGroups.py    # Undoes imports using the rollback journal
   tests/
     smoke.ps1                       # Automated preflight & smoke test runner
@@ -97,8 +97,8 @@ Always run verify-only mode first. This tests connectivity, checks permissions, 
 python .\scripts\Import-ArcherLdapGroups.py --server "TSQL01" --database "TargetArcherDB" --input .\exports\groups.json --verify-only
 ```
 
-### Step 3: Import Stubs into Target Database
-Execute the import to create local stub groups with matching GUIDs:
+### Step 3: Import Placeholders into Target Database
+Execute the import to create local placeholder groups with matching GUIDs:
 ```powershell
 python .\scripts\Import-ArcherLdapGroups.py --server "TSQL01" --database "TargetArcherDB" --input .\exports\groups.json
 ```
@@ -106,7 +106,7 @@ python .\scripts\Import-ArcherLdapGroups.py --server "TSQL01" --database "Target
 - If existing target groups share the same name but have different GUIDs, they are safely skipped. Add `--fix-guids` only if you explicitly intend to update their GUIDs.
 
 ### Step 4: Install the Archer Package
-Navigate to the Archer Web UI on the target instance (**Administration > Tools > Install Packages**) and install your application package. Archer's `KeyManager` will automatically map layout authorizations and access roles to the imported stub groups.
+Navigate to the Archer Web UI on the target instance (**Administration > Tools > Install Packages**) and install your application package. Archer's `KeyManager` will automatically map layout authorizations and access roles to the imported placeholder groups.
 
 ---
 
@@ -123,7 +123,7 @@ python .\scripts\Rollback-ArcherLdapGroups.py --server "TSQL01" --database "Targ
 # 2. Execute rollback:
 python .\scripts\Rollback-ArcherLdapGroups.py --server "TSQL01" --database "TargetArcherDB" --journal .\exports\groups.json.rollback.json
 ```
-The script reads the rollback journal and deletes the created hierarchy edges and stub groups in reverse dependency order.
+The script reads the rollback journal and deletes the created hierarchy edges and placeholder groups in reverse dependency order.
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**
 - Once the package is installed, layouts, access roles, and events bind foreign keys to `tblGroup.group_id`.

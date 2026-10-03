@@ -1,6 +1,6 @@
 # Archer LDAP Group Migration — SQL Sub-Project
 
-A pure T-SQL toolkit for migrating Archer LDAP groups across instances (e.g., to air-gapped, staging, or cross-domain instances outside the Active Directory network) as **local stub groups with exact source GUIDs**.
+A pure T-SQL toolkit for migrating Archer LDAP groups across instances (e.g., to air-gapped, staging, or cross-domain instances outside the Active Directory network) as **local placeholder groups with exact source GUIDs**.
 
 This sub-project is designed specifically for **Database Administrators (DBAs)** and environments where **Python, pip, or ODBC drivers cannot be installed**.
 
@@ -16,7 +16,7 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
   - Preflight permission guards (`db_datawriter` / `db_owner` / `sysadmin`).
   - Dynamic `sys.foreign_keys` inspection for safe rollback.
 - **Known SQL-path limitations (Python-only features):** hierarchy edges
-  (`tblGroupRelationships`) are not migrated — re-created stubs are flat
+  (`tblGroupRelationships`) are not migrated — re-created placeholders are flat
   (packaging ignores hierarchy, so installs still map); no `--fix-guids`
   equivalent (same-name/wrong-GUID rows are skipped, never overwritten);
   no automatic rollback journal (paste GUIDs into the rollback script manually).
@@ -28,8 +28,8 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
 | File | Target Instance | Role | Description |
 | :--- | :--- | :--- | :--- |
 | [`Export-ArcherLdapGroups.sql`](Export-ArcherLdapGroups.sql) | **SOURCE DB** | Read-Only | Extracts LDAP groups and formats them into ready-to-paste T-SQL `INSERT` statements. |
-| [`Import-ArcherLdapGroups.sql`](Import-ArcherLdapGroups.sql) | **TARGET DB** | Write | Analyzes existing groups, reports conflicts, and inserts missing stubs with matching GUIDs. |
-| [`Rollback-ArcherLdapGroups.sql`](Rollback-ArcherLdapGroups.sql) | **TARGET DB** | Safe Revert | Checks all 24+ foreign keys before deleting; safely deletes stubs prior to package install. |
+| [`Import-ArcherLdapGroups.sql`](Import-ArcherLdapGroups.sql) | **TARGET DB** | Write | Analyzes existing groups, reports conflicts, and inserts missing placeholders with matching GUIDs. |
+| [`Rollback-ArcherLdapGroups.sql`](Rollback-ArcherLdapGroups.sql) | **TARGET DB** | Safe Revert | Checks all 24+ foreign keys before deleting; safely deletes placeholders prior to package install. |
 
 ---
 
@@ -64,7 +64,7 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
 Once the verification confirms that all groups match:
 1. Navigate to the Archer Web UI on the target instance.
 2. Go to **Administration > Tools > Install Packages**.
-3. Install the application package. The packaging installer will automatically map layout authorizations, access roles, and event actions to the pre-seeded stub groups.
+3. Install the application package. The packaging installer will automatically map layout authorizations, access roles, and event actions to the pre-seeded placeholder groups.
 
 ---
 
@@ -76,7 +76,7 @@ Once the verification confirms that all groups match:
 If you need to cancel the migration before the package is installed:
 1. Open [`Rollback-ArcherLdapGroups.sql`](Rollback-ArcherLdapGroups.sql) in SSMS connected to the TARGET database.
 2. Paste the GUIDs of the groups you wish to delete into Section 2 (`#RollbackGuids`).
-3. Execute (`F5`). Because no package objects reference the stubs yet, the script safely deletes them.
+3. Execute (`F5`). Because no package objects reference the placeholders yet, the script safely deletes them.
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**
 - Once the package is installed, layouts, fields, access roles, and notifications bind foreign keys to `tblGroup.group_id`.
@@ -90,4 +90,4 @@ If you need to cancel the migration before the package is installed:
 
 - **Identity Sequence Gaps:** Deleting created rows leaves permanent gaps in `tblGroup.group_id` (`IDENTITY(1,1)`). This is expected SQL Server behavior and does not affect Archer functionality since packaging matches exclusively on `guid`.
 - **Audit Login Resolution:** The import script dynamically inspects `dbo.tblUser` to identify the `sysadmin` account ID (falling back to the lowest valid `user_id`) rather than hardcoding arbitrary IDs.
-- **Web UI Cache:** Direct SQL inserts into `dbo.tblGroup` bypass Archer's in-memory `GroupBroker` cache. While packaging reads directly from the database and works immediately, the Archer Web UI Manage Groups tree may require an application pool recycle or cache refresh to display the newly created stubs.
+- **Web UI Cache:** Direct SQL inserts into `dbo.tblGroup` bypass Archer's in-memory `GroupBroker` cache. While packaging reads directly from the database and works immediately, the Archer Web UI Manage Groups tree may require an application pool recycle or cache refresh to display the newly created placeholders.

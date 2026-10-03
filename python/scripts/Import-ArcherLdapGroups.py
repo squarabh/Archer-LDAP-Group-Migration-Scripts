@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-r"""Import LDAP-group stubs into the TARGET Archer instance DB (idempotent).
+r"""Import LDAP-group placeholders into the TARGET Archer instance DB (idempotent).
 
 Creates LOCAL groups (ldap_config_id/distinguished_name NULL) with the EXACT
 source GUIDs so Archer packaging auto-maps them (match key = guid,
@@ -117,7 +117,7 @@ def connect(server, database, sql_user, sql_password):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Import LDAP-group stubs (idempotent)")
+    ap = argparse.ArgumentParser(description="Import LDAP-group placeholders (idempotent)")
     ap.add_argument("--server", default=None)
     ap.add_argument("--database", default=None)
     ap.add_argument("--config", default=None, help="JSON with {target:{server,database}}")

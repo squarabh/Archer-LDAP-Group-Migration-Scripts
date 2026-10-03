@@ -3,7 +3,7 @@
    Archer LDAP Group Migration (SQL-Only Sub-Project)
 
    PURPOSE:
-     Imports LDAP group stubs into the TARGET Archer instance database as
+     Imports LDAP group placeholders into the TARGET Archer instance database as
      local groups with the EXACT source GUIDs (ldap_config_id = NULL,
      distinguished_name = NULL).
 
@@ -18,7 +18,7 @@
      - Idempotent: safe to run multiple times without duplicating groups.
      - Auth & Wrong-Database guards abort BEFORE any write.
      - Does not overwrite or delete existing groups.
-     - Bypasses LDAP sync requirement by creating offline local stubs.
+     - Bypasses LDAP sync requirement by creating offline local placeholders.
    ============================================================================ */
 
 SET NOCOUNT ON;
@@ -147,7 +147,7 @@ PRINT 'Audit Login ID to use: ' + CAST(@admin_login AS VARCHAR(10));
 
 -- 6. Insert Missing Groups
 PRINT '----------------------------------------------------------------------------';
-PRINT '--- INSERTING MISSING STUB GROUPS                                        ---';
+PRINT '--- INSERTING MISSING PLACEHOLDER GROUPS                                        ---';
 PRINT '----------------------------------------------------------------------------';
 
 INSERT INTO dbo.tblGroup
@@ -155,7 +155,7 @@ INSERT INTO dbo.tblGroup
      everyone, guid, [system], distinguished_name, ldap_config_id)
 SELECT 
     s.group_name, 
-    N'Migrated LDAP stub group for offline packaging', 
+    N'Migrated LDAP placeholder group for offline packaging', 
     GETDATE(), 
     @admin_login, 
     GETDATE(), 

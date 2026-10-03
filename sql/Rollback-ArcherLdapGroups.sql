@@ -3,7 +3,7 @@
    Archer LDAP Group Migration (SQL-Only Sub-Project)
 
    PURPOSE:
-     Safely rolls back (deletes) stub groups created during an import run.
+     Safely rolls back (deletes) placeholder groups created during an import run.
 
    SAFETY GUARANTEES:
      - Pre-Package Installation: Runs cleanly when groups are unreferenced.
@@ -68,7 +68,7 @@ CREATE TABLE #RollbackGuids (
 DECLARE @target_count INT = (SELECT COUNT(*) FROM #RollbackGuids);
 IF @target_count = 0
 BEGIN
-    PRINT 'NOTICE: #RollbackGuids is empty. Paste GUIDs of stub groups to revert above.';
+    PRINT 'NOTICE: #RollbackGuids is empty. Paste GUIDs of placeholder groups to revert above.';
     SET NOEXEC ON;
     RETURN;
 END
@@ -159,7 +159,7 @@ BEGIN
     PRINT '';
     PRINT 'REMEDIATION PATH:';
     PRINT '1. In the Archer UI, uninstall the package or remove group assignments from layouts/roles.';
-    PRINT '2. Once dependencies are removed, re-run this script to delete the stubs.';
+    PRINT '2. Once dependencies are removed, re-run this script to delete the placeholders.';
     PRINT 'NO CHANGES WERE MADE TO THE DATABASE.';
     SET NOEXEC ON;
     RETURN;
@@ -179,18 +179,18 @@ WHERE r.parent_group_id IN (SELECT group_id FROM #TargetGroups)
    OR r.child_group_id IN (SELECT group_id FROM #TargetGroups);
 PRINT 'Deleted hierarchy relationships: ' + CAST(@@ROWCOUNT AS VARCHAR(10));
 
--- Delete the stub groups
+-- Delete the placeholder groups
 DELETE g
 FROM dbo.tblGroup g
 JOIN #TargetGroups t ON t.group_id = g.group_id;
 
 DECLARE @deleted_groups INT = @@ROWCOUNT;
-PRINT 'Deleted stub groups: ' + CAST(@deleted_groups AS VARCHAR(10));
+PRINT 'Deleted placeholder groups: ' + CAST(@deleted_groups AS VARCHAR(10));
 
 COMMIT TRANSACTION;
 
 PRINT '';
-PRINT 'ROLLBACK COMPLETE: Successfully deleted ' + CAST(@deleted_groups AS VARCHAR(10)) + ' stub group(s).';
+PRINT 'ROLLBACK COMPLETE: Successfully deleted ' + CAST(@deleted_groups AS VARCHAR(10)) + ' placeholder group(s).';
 GO
 
 SET NOEXEC OFF;
