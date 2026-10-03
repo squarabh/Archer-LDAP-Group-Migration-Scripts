@@ -140,7 +140,7 @@ The script reads the rollback journal and deletes the created hierarchy edges an
 | :--- | :--- | :--- |
 | `--server` | SQL Server hostname / instance | None |
 | `--database` | Source Archer instance database | None |
-| `--output` | Destination path for the exported JSON file | `.\exports\ldap_groups_export.json` |
+| `--output` | Destination path for the exported JSON file (forward slashes work on Windows and Linux) | `./exports/ldap_groups_export.json` |
 | `--config` | Path to JSON config file | None |
 | `--all` | Export ALL groups (including local non-LDAP groups) | `False` |
 | `--include-system` | Include Archer system and everyone groups | `False` |

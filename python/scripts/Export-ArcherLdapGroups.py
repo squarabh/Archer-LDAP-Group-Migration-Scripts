@@ -72,7 +72,7 @@ def main():
     ap = argparse.ArgumentParser(description="Export Archer LDAP groups (read-only)")
     ap.add_argument("--server", default=None)
     ap.add_argument("--database", default=None)
-    ap.add_argument("--output", default=".\\exports\\ldap_groups_export.json")
+    ap.add_argument("--output", default="./exports/ldap_groups_export.json")
     ap.add_argument("--config", default=None, help="JSON with {source:{server,database}}")
     ap.add_argument("--all", action="store_true", help="export ALL groups, not just LDAP ones")
     ap.add_argument("--include-system", action="store_true")
