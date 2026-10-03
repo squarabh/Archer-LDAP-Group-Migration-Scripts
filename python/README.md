@@ -106,7 +106,7 @@ python .\scripts\Import-ArcherLdapGroups.py --server "TSQL01" --database "Target
 - If existing target groups share the same name but have different GUIDs, they are safely skipped. Add `--fix-guids` only if you explicitly intend to update their GUIDs.
 
 ### Step 4: Install the Archer Package
-Navigate to the Archer Web UI on the target instance (**Administration > Tools > Install Packages**) and install your application package. Archer's `KeyManager` will automatically map layout authorizations and access roles to the imported placeholder groups.
+Navigate to the Archer Web UI on the target instance (**Administration > Tools > Install Packages**) and install your application package. The installer will automatically map layout authorizations and access roles to the imported placeholder groups.
 
 ---
 

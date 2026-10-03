@@ -248,7 +248,7 @@ def main():
         for batch in chunked(guids, size=500):
             cur2.execute(f"SELECT COUNT(*) FROM dbo.tblGroup WHERE guid IN ({','.join('?'*len(batch))})", batch)
             total_matched += cur2.fetchone()[0]
-        print(f"Installer check GetGroupsByGuid: {total_matched}/{len(guids)} matched (need all).")
+        print(f"Installer check (GUID match): {total_matched}/{len(guids)} matched (need all).")
 
         if args.emit_sql:
             write_sql(args.emit_sql, data, effective_login_id)

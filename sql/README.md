@@ -90,4 +90,4 @@ If you need to cancel the migration before the package is installed:
 
 - **Identity Sequence Gaps:** Deleting created rows leaves permanent gaps in `tblGroup.group_id` (`IDENTITY(1,1)`). This is expected SQL Server behavior and does not affect Archer functionality since packaging matches exclusively on `guid`.
 - **Audit Login Resolution:** The import script dynamically inspects `dbo.tblUser` to identify the `sysadmin` account ID (falling back to the lowest valid `user_id`) rather than hardcoding arbitrary IDs.
-- **Web UI Cache:** Direct SQL inserts into `dbo.tblGroup` bypass Archer's in-memory `GroupBroker` cache. While packaging reads directly from the database and works immediately, the Archer Web UI Manage Groups tree may require an application pool recycle or cache refresh to display the newly created placeholders.
+- **Web UI Cache:** Direct SQL inserts into `dbo.tblGroup` bypass Archer's in-memory group cache. While packaging reads directly from the database and works immediately, the Archer Web UI Manage Groups tree may require an application pool recycle or cache refresh to display the newly created placeholders.

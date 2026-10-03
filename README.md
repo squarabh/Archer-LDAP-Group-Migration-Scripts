@@ -3,7 +3,7 @@
 An enterprise solution for migrating Archer LDAP groups across Archer GRC instances (such as staging, QA, dev, or air-gapped instances outside the Active Directory network) as **local placeholder groups with exact source GUIDs**.
 
 This toolkit eliminates the classic Archer Application Packaging installation failure:
-> `ValidationSeverity.Error: LDAPGroupNotCreatable: Group {sourceGroupId} is an LDAP group and can't be created.`
+> `LDAPGroupNotCreatable: Group … is an LDAP group and can't be created.`
 
 The repository provides two independent, fully featured sub-projects tailored for different operational workflows:
 - **[Python Sub-Project (`python/`)](python/README.md)**: Automated CLI tools with JSON export, dry-run validation, and rollback journal management.
@@ -11,7 +11,7 @@ The repository provides two independent, fully featured sub-projects tailored fo
 
 ---
 
-## 1. How It Works (Archer Packaging Internals)
+## 1. How It Works (Observed Install Behavior)
 
 ### The Core Problem
 When exporting an Archer application, any field permissions, layout access rules, access roles, or notifications assigned to an LDAP group are serialized with that group's GUID and domain:
@@ -24,25 +24,15 @@ When exporting an Archer application, any field permissions, layout access rules
     <Domain>corp.example.com</Domain>
 </PackageGroup>
 ```
-During package installation on a target instance:
-1. **Key Resolution (`KeyManager.cs`):** Archer's `GroupGuidLookup` queries `dbo.tblGroup` by GUID (`groupBroker.GetGroupsByGuid`). If a group with that exact GUID is found, Archer immediately associates the package permissions with the target `group_id`.
-2. **The Failure Point (`GroupInstaller.cs`):** If the group is missing, Archer attempts to create it. For local groups, it creates a new placeholder. However, for LDAP groups (having a non-empty `Domain`), Archer halts execution:
-   ```csharp
-   if (packageGroup.Domain == null || packageGroup.Domain.Trim() == string.Empty) {
-       // Local group: creates placeholder
-   } else {
-       // LDAP group: Hard error!
-       requestResult.ValidationMessages.Add(new ValidationMessage(
-           "LDAPGroupNotCreatable", typeof(GroupInstaller).Name, "LDAP Group", 
-           ValidationSeverity.Error, $"Group {sourceGroupId} is an LDAP group and can't be created."));
-   }
-   ```
-   Because target instances outside the Active Directory network cannot perform LDAP synchronization, the installation fails.
+During package installation on a target instance, the installer behaves as follows (as observed from install logs and install outcomes):
+1. **GUID matching:** the installer looks up each packaged group in `dbo.tblGroup` by GUID. If a group with that exact GUID is found, the package permissions are associated with the matching target `group_id` — no group is created.
+2. **The failure point:** if the group is missing, the installer attempts to create it. Groups with an empty `Domain` (local groups) are auto-created and the install continues. Groups with a non-empty `Domain` (LDAP groups) abort the installation with an `LDAPGroupNotCreatable` validation error instead.
+Because target instances outside the Active Directory network cannot pull those LDAP groups in via directory synchronization, the installation fails.
 
 ### The Solution: Offline Local Placeholder Seeding
 By pre-creating local placeholder records in `dbo.tblGroup` using the **exact source GUIDs** (with `ldap_config_id = NULL` and `distinguished_name = NULL`):
-- `KeyManager` finds the matching GUID immediately in `dbo.tblGroup`.
-- `GroupInstaller.CreateGroup` is completely bypassed.
+- The installer finds the matching GUID immediately in `dbo.tblGroup`.
+- No group creation is attempted during the install.
 - The Archer application package installs cleanly with zero errors.
 
 ---
@@ -81,7 +71,7 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 - This is standard SQL Server behavior and does **not** affect Archer functionality since packaging keys strictly on `guid`, not `group_id`.
 
 #### Caching & Broker Side Effects
-- Direct SQL inserts into `dbo.tblGroup` bypass Archer's in-memory `GroupBroker` cache.
+- Direct SQL inserts into `dbo.tblGroup` bypass Archer's in-memory group cache.
 - While the database immediately holds the records (and packaging reads them directly from the database), Archer web services and the UI Manage Groups tree may not show the new groups immediately until an application cache refresh or IIS AppPool recycle occurs.
 
 ---
@@ -103,7 +93,7 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 
 ### Round-Trip Packaging (Target &rarr; Source)
 - If an application configured on the target instance is later packaged and brought back to the source instance, will it automap?
-- **Yes.** Because the placeholder group in the target instance shares the exact same GUID as the source LDAP group, the source instance's `KeyManager` will match the GUID immediately on return.
+- **Yes.** Because the placeholder group in the target instance shares the exact same GUID as the source LDAP group, the installer will match the GUID immediately on return.
 
 ---
 

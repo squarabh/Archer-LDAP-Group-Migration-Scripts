@@ -173,9 +173,10 @@ DECLARE @inserted_count INT = @@ROWCOUNT;
 PRINT 'Newly Inserted Groups: ' + CAST(@inserted_count AS VARCHAR(10));
 PRINT '';
 
--- 7. Verification Check (Simulates Archer KeyManager.GetGroupsByGuid)
+-- 7. Verification Check (confirms every source GUID now exists in dbo.tblGroup,
+--    which is what the package installer matches on)
 PRINT '----------------------------------------------------------------------------';
-PRINT '--- VERIFICATION (Archer KeyManager.GetGroupsByGuid)                     ---';
+PRINT '--- VERIFICATION (package installer GUID match check)                  ---';
 PRINT '----------------------------------------------------------------------------';
 
 DECLARE @matched_total INT;

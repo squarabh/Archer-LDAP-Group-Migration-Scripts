@@ -40,7 +40,7 @@ python .\scripts\Import-ArcherLdapGroups.py --server TSQL --database ArcherTarge
 # SSMS-only alternative → use sql/Import-ArcherLdapGroups.sql
 ```
 
-Gate before installing the package: `Installer check GetGroupsByGuid: N/N matched`.
+Gate before installing the package: `Installer check (GUID match): N/N matched`.
 
 ## 5. Install the Archer package
 

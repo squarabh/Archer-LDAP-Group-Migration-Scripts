@@ -50,7 +50,7 @@ journal-created hierarchy edges.
 
 ## Cascading / cache notes
 
-- Direct SQL bypasses `GroupBroker` side effects (task-permission precompute,
+- Direct SQL bypasses Archer broker side effects (task-permission precompute,
   content-permission recalculation jobs, `UserFieldPermission` cache flush,
   security-event log). For **empty new placeholders** there is nothing to recalculate,
   and the package install itself runs through the brokers afterwards, which
@@ -58,6 +58,6 @@ journal-created hierarchy edges.
 - If you import groups that will carry `cascade_group=1` authorizations with
   large existing hierarchies, expect Archer's normal post-install permission
   recalculation jobs (same as any package install) — not caused by this script.
-- New groups are read by `GetGroupsByGuid` straight from the DB, so mapping
+- New groups are found by the installer's GUID lookup straight from the DB, so mapping
   works immediately. If the Manage-Groups tree doesn't show them, refresh /
   re-login; an app-pool recycle is optional, never required for correctness.
