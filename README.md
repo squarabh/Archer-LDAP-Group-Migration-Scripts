@@ -62,7 +62,7 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**
 - Once the package is installed, layouts, fields, access roles, and event actions bind foreign keys to `tblGroup.group_id`.
-- **All 24 foreign keys** referencing `dbo.tblGroup` in SQL Server are configured with `ON DELETE NO ACTION` (restrict).
+- **All 24 foreign keys** referencing `dbo.tblGroup` in SQL Server are configured with `ON DELETE NO ACTION` (restrict). (Counted on Archer 6.15; other versions are handled because inspection is dynamic.)
 - Both the Python and SQL rollback utilities dynamically inspect `sys.foreign_keys`. If active references exist, they safely abort and print the exact blocking table names and record counts.
 - **Reversion Path:** To roll back post-installation, the group references must be removed from the layout/application manually first (Archer has no package uninstall), a pre-change backup package reinstalled to overwrite them, or the instance database restored from a pre-migration backup — then the rollback utility can be re-run.
 
@@ -82,6 +82,23 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 - Package definitions **never** package or map user-to-group memberships.
 - Groups in packages serve purely as structural containers for application permissions.
 - User memberships are omitted by default to protect Active Directory user privacy and eliminate payload bloat.
+- `--include-members` (Python) exports them **for audit only** — the importer never
+  inserts memberships, since LDAP users cannot exist on an offline target.
+
+### LDAP Sync Interplay
+- If directory synchronization runs on the **source**, it may recreate or rename LDAP
+  groups with **new GUIDs** at any time. Always export immediately before migrating,
+  and treat the export as a point-in-time snapshot.
+- On the **target**, do not run LDAP sync for the migrated groups: a sync would create
+  duplicate same-name groups with fresh GUIDs that packages will not map to.
+
+### Compatibility & Tested Versions
+- Tested on **Archer 6.15** with **SQL Server 2019**. The toolkit uses only
+  long-stable catalog views and syntax (`sys.foreign_keys`, temp tables,
+  `RAISERROR` with variables), so SQL Server 2012+ is expected to work.
+- The "24 foreign keys" figure was counted on Archer 6.15 — other versions may differ,
+  which is safe by design: both rollback paths inspect `sys.foreign_keys` dynamically
+  instead of hardcoding table names.
 
 ### Group Hierarchy (`tblGroupRelationships`)
 - Packaging does not evaluate or package parent/child group relationships.

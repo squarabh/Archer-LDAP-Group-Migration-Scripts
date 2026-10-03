@@ -8,7 +8,9 @@ This sub-project is designed specifically for **Database Administrators (DBAs)**
 
 ## 1. Why Use the SQL-Only Approach?
 
-- **Zero External Dependencies:** Runs natively in SQL Server Management Studio (SSMS), Azure Data Studio, or `sqlcmd`.
+- **Zero External Dependencies:** Runs natively in SQL Server Management Studio (SSMS), Azure Data Studio, or `sqlcmd` (SQL Server 2012 or later; tested on 2019).
+- **Target:** any Archer 6.x instance database (tested on 6.15). Take a verified
+  backup of the target database before importing — post-install reversion needs it.
 - **Air-Gapped & Locked-Down Environments:** Perfect when security policies prohibit running external scripts or installing runtimes on database servers.
 - **Full Parity with Python Toolkit for the core flow:**
   - Idempotent insertion (`WHERE NOT EXISTS`).
@@ -84,7 +86,7 @@ If you need to cancel the migration before the package is installed:
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**
 - Once the package is installed, layouts, fields, access roles, and notifications bind foreign keys to `tblGroup.group_id`.
-- All 24 foreign keys referencing `dbo.tblGroup` in SQL Server are configured with `ON DELETE NO ACTION`.
+- All 24 foreign keys referencing `dbo.tblGroup` in SQL Server are configured with `ON DELETE NO ACTION` (counted on Archer 6.15; dynamically inspected, so version-safe).
 - [`Rollback-ArcherLdapGroups.sql`](Rollback-ArcherLdapGroups.sql) automatically scans `sys.foreign_keys`. If active references exist, it aborts without deleting any rows and prints the exact blocking table names and record counts.
 - **Reversion Path (Archer has no package uninstall):** manually remove the group assignments from the application layouts/roles/events first, reinstall a pre-change backup package to overwrite them, or restore the instance database from a pre-migration backup — then re-run the rollback script.
 

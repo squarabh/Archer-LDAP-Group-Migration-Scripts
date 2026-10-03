@@ -2,6 +2,14 @@
 
 All notable changes to this project are recorded here. Dates are UTC.
 
+## [Unreleased]
+- SQL path now migrates GUID-keyed hierarchy edges (export emits `#SrcHier`
+  lines; import recreates them), matching the Python importer.
+- Docs written observationally (no implementation references); terminology unified
+  on "placeholder"; reversion path corrected (Archer has no package uninstall).
+- Cross-platform path defaults; backup prerequisite, LDAP-sync interplay warning,
+  `--fix-guids` consequence note, and tested-versions matrix documented.
+
 ## [1.0.0] - 2026-10-03
 
 Initial public release under `FSL-1.1-MIT`.

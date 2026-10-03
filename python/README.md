@@ -10,6 +10,8 @@ This sub-project provides automated JSON-based extraction, idempotent importing,
 
 ### System Requirements
 - **Python:** Version 3.8 or higher.
+- **SQL Server:** 2012 or later on source and target (tested on 2019).
+- **Archer:** 6.x instance databases (tested on 6.15).
 - **SQL Server ODBC Driver:**
   - [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server) (Recommended)
   - ODBC Driver 17 for SQL Server, or standard SQL Server legacy driver.
@@ -89,7 +91,7 @@ python .\scripts\Export-ArcherLdapGroups.py --config .\config\migration.config.j
 # Or using explicit flags:
 python .\scripts\Export-ArcherLdapGroups.py --server "SQL01" --database "SourceArcherDB" --output .\exports\groups.json
 ```
-*Tip: By default, user memberships (`tblXGroupsUsers`) are omitted to protect Active Directory privacy and optimize payload size. If you need user memberships for auditing, pass the `--include-members` flag.*
+*Tip: By default, user memberships (`tblXGroupsUsers`) are omitted to protect Active Directory privacy and optimize payload size. If you need user memberships for auditing, pass the `--include-members` flag. Note the importer never inserts memberships either way — they are audit-only, since LDAP users cannot exist on an offline target.*
 
 ### Step 2: Verify on Target (Zero-Risk Dry Run)
 Always run verify-only mode first. This tests connectivity, checks permissions, reports matched vs. missing groups, and identifies naming conflicts without making any database modifications:
@@ -103,7 +105,8 @@ Execute the import to create local placeholder groups with matching GUIDs:
 python .\scripts\Import-ArcherLdapGroups.py --server "TSQL01" --database "TargetArcherDB" --input .\exports\groups.json
 ```
 - Every write run automatically writes a **Rollback Journal** (default: `<input>.rollback.json`, e.g., `.\exports\groups.json.rollback.json`).
-- If existing target groups share the same name but have different GUIDs, they are safely skipped. Add `--fix-guids` only if you explicitly intend to update their GUIDs.
+- If existing target groups share the same name but have different GUIDs, they are safely skipped. Add `--fix-guids` only if you explicitly intend to update their GUIDs — note this rewrites the group's packaging identity, so packages referencing the old GUID will stop mapping to it.
+- Take a verified backup of the target database before importing (see `docs/RUNBOOK.md`).
 
 ### Step 4: Install the Archer Package
 Navigate to the Archer Web UI on the target instance (**Administration > Tools > Install Packages**) and install your application package. The installer will automatically map layout authorizations and access roles to the imported placeholder groups.

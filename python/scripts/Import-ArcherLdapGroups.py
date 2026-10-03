@@ -263,7 +263,7 @@ def main():
 def write_sql(path, data, login_id=2):
     lines = ["/* Auto-generated standalone loader — idempotent, guid + same-name guarded like the importer.",
              "   NOTE: no auth preflight, no hierarchy edges. For the fully guarded SSMS path use",
-             "   sql/Import-ArcherLdapGroups.sql instead. */",
+             "   the SQL sub-project's Import-ArcherLdapGroups.sql instead. */",
              "SET NOCOUNT ON;", "SET QUOTED_IDENTIFIER ON;", "SET ANSI_NULLS ON;", "GO",
              "IF OBJECT_ID('tempdb..#Src') IS NOT NULL DROP TABLE #Src;",
              "CREATE TABLE #Src (group_name NVARCHAR(500), guid UNIQUEIDENTIFIER);"]

@@ -9,6 +9,9 @@ never appear in this repo — see `examples/example_export.json` for the format.
   auto-negotiate). Or: use the standalone [SQL sub-project](../../sql/README.md).
 - SOURCE: `db_datareader`. TARGET: `db_datawriter` or `db_owner` (scripts
   preflight this and abort clearly otherwise).
+- **Take a verified backup of the TARGET instance database first.** Post-install
+  rollback needs either manual reference removal or a DB restore — without a
+  backup, option 3 of the reversion path does not exist.
 - No downtime, no service restarts.
 
 ## 1. Configure
