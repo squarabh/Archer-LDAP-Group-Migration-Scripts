@@ -24,7 +24,8 @@ each step guarded by re-checking current state (safe to run twice).
 ## When rollback is BLOCKED (by design)
 
 Once the package is installed, rows like `tblXEventActionGroup(group_id)`
-reference the new placeholders. All 24 foreign keys to `tblGroup` are `NO ACTION`, so SQL
+reference the new placeholders. All 24 foreign keys to `tblGroup` (counted on Archer 6.15;
+other versions are handled because inspection is dynamic) are `NO ACTION`, so SQL
 Server itself refuses the delete. The rollback script automatically and dynamically
 inspects `sys.foreign_keys` across all tables pointing to `dbo.tblGroup` and aborts
 with exit 2 listing every blocking referencer:

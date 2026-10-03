@@ -180,7 +180,7 @@ The script reads the rollback journal and deletes the created hierarchy edges an
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**
 - Once the package is installed, layouts, access roles, and events bind foreign keys to `tblGroup.group_id`.
-- All 24 foreign keys to `tblGroup` in SQL Server are configured with `ON DELETE NO ACTION`.
+- All 24 foreign keys to `tblGroup` in SQL Server are configured with `ON DELETE NO ACTION` (counted on Archer 6.15; dynamically inspected, so version-safe).
 - `Rollback-ArcherLdapGroups.py` dynamically scans `sys.foreign_keys`. If active references exist, it aborts (Exit 2) and prints the exact blocking table names and reference counts.
 - **Reversion Path (Archer has no package uninstall):** manually remove the group assignments in the application layouts/roles/events first, reinstall a pre-change backup package to overwrite them, or restore the instance database from a pre-migration backup — then re-run the rollback script.
 
