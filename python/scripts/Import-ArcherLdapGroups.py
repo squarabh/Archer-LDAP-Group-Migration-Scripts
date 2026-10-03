@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: FSL-1.1-MIT
 r"""Import LDAP-group placeholders into the TARGET Archer instance DB (idempotent).
 
 Creates LOCAL groups (ldap_config_id/distinguished_name NULL) with the EXACT

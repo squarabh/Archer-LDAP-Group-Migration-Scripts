@@ -103,6 +103,10 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 .
 ├── README.md                      # Global architecture & comparison guide (this file)
 ├── LICENSE.md                     # FSL-1.1-MIT license (Copyright 2026 Sourabh Sharma)
+├── CHANGELOG.md                   # Release history
+├── CONTRIBUTING.md                # Contribution ground rules
+├── SECURITY.md                    # Security policy
+├── .gitattributes                 # Line-ending normalization
 ├── .gitignore                     # Git ignore rules for configs, journals, and logs
 │
 ├── python/                        # Python CLI Sub-Project
@@ -143,3 +147,12 @@ Licensed under the [Functional Source License, Version 1.1, MIT Future License](
 (`FSL-1.1-MIT`), Copyright 2026 Sourabh Sharma. Use, copy, modification and redistribution
 are permitted for any purpose other than a Competing Use (see license text); each published
 version converts to MIT on the second anniversary of the date it is made available.
+
+---
+
+## 8. Credits & Thanks
+
+Created and maintained by **[Sourabh Sharma](https://in.linkedin.com/in/squarabh)** —
+Archer GRC professional (7+ years on the platform, Archer Certified Administrator –
+Expert), currently with KPMG in Qatar. Built from real-world air-gapped Archer
+migration work, with the goal of making LDAP-dependent packages install anywhere.

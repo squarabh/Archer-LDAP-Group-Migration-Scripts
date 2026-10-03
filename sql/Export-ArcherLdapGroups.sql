@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: FSL-1.1-MIT
 /* ============================================================================
    Export-ArcherLdapGroups.sql
    Archer LDAP Group Migration (SQL-Only Sub-Project)

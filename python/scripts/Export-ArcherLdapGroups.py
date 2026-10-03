@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: FSL-1.1-MIT
 r"""Export Archer LDAP groups (read-only) to JSON.
 
 Reads:  --server/--database (or --config JSON with .source) + --sql-user/--sql-password.

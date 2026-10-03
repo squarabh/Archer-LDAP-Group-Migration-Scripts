@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
 # ==============================================================================
 # Smoke Test Runner for Archer LDAP Group Migration Toolkit
 # NOTE: Run only against DEV / Non-Production databases!

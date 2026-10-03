@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: FSL-1.1-MIT
 r"""Roll back an Import-ArcherLdapGroups.py run from its journal.
 
 Reads <journal>.rollback.json {created_groups[], guid_fixes[], added_edges[]}
