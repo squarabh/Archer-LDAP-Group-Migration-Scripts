@@ -103,6 +103,10 @@ CREATE TABLE #SrcHier (
    (leave empty if the source has no hierarchy — edges are optional)
    ---------------------------------------------------------------------------- */
 
+-- EXAMPLE PLACEHOLDERS (fictional GUIDs — parent first, then child):
+-- INSERT INTO #SrcHier VALUES ('AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA', 'BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB');
+-- INSERT INTO #SrcHier VALUES ('AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA', 'CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC');
+
 /* ----------------------------------------------------------------------------
    >>> END OF PASTED HIERARCHY ROWS <<<
    ---------------------------------------------------------------------------- */
