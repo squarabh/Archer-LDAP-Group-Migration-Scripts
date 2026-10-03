@@ -1,7 +1,7 @@
 # Runbook — extract → verify → import → install → (rollback if needed)
 
 All values below are placeholders. Real customer names, domains, IPs and GUIDs
-never appear in this repo — see `examples/example_export.json` for the format.
+never appear in this repo — see `../examples/example_export.json` for the format.
 
 ## 0. Prerequisites
 
@@ -40,7 +40,7 @@ python .\scripts\Import-ArcherLdapGroups.py --server TSQL --database ArcherTarge
 ```powershell
 python .\scripts\Import-ArcherLdapGroups.py --server TSQL --database ArcherTarget --input .\exports\groups.json
 # same-name rows with wrong GUIDs (manual UI creation) → add --fix-guids
-# SSMS-only alternative → use sql/Import-ArcherLdapGroups.sql
+# SSMS-only alternative → use ../../sql/Import-ArcherLdapGroups.sql
 ```
 
 Gate before installing the package: `Installer check (GUID match): N/N matched`.

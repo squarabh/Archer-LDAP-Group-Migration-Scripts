@@ -44,7 +44,7 @@ Write-Host "All scripts parsed successfully." -ForegroundColor Green
 
 # Step 3: Run verify-only dry run on DEV instance
 Write-Host "`n[3/3] Running verify-only dry run against $Database..." -ForegroundColor Yellow
-    $sampleExport = Join-Path $BaseDir "examples/example_export.json"
+$sampleExport = Join-Path $BaseDir "examples/example_export.json"
 if (Test-Path $sampleExport) {
     $authArgs = @()
     if ($SqlUser) {

@@ -230,5 +230,5 @@ All three scripts use the same exit codes, so they are safe to chain in automati
 | :--- | :--- | :--- |
 | `0` | Success (or clean dry-run / check-only preview) | all scripts |
 | `1` | Error: bad input, connection failure, or rolled-back exception | all scripts |
-| `2` | Blocked by design: created groups are now referenced by package objects — no changes made | `Rollback-…` (re-run after removing references; `--force` still removes journal edges) |
+| `2` | Blocked / nothing to do — no changes made: rollback blocked by references, or export matched zero groups | `Rollback-…` (re-run after removing references; `--force` still removes journal edges); `Export-…` (broaden filter) |
 | `3` | Auth/permission preflight failed — no changes made (re-run with `--sql-user/--sql-password`) | `Export-…`, `Import-…`, `Rollback-…` |

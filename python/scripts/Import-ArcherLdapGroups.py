@@ -154,10 +154,17 @@ def main():
         print("ERROR: input has no groups", file=sys.stderr)
         sys.exit(1)
 
-    # Validate GUID formats upfront
-    for g in groups:
+    # Validate input shape + GUID formats upfront (fail fast, before connecting)
+    for i, g in enumerate(groups):
+        if not isinstance(g, dict) or g.get("guid") is None or g.get("group_name") is None:
+            print(f"ERROR: groups[{i}] must be an object with 'guid' and 'group_name'.", file=sys.stderr)
+            sys.exit(1)
         if not is_valid_uuid(g.get("guid")):
             print(f"ERROR: group '{g.get('group_name')}' contains invalid GUID: {g.get('guid')}", file=sys.stderr)
+            sys.exit(1)
+    for i, h in enumerate(hier):
+        if not isinstance(h, dict) or h.get("parent_group_id") is None or h.get("child_group_id") is None:
+            print(f"ERROR: hierarchy[{i}] must be an object with 'parent_group_id' and 'child_group_id'.", file=sys.stderr)
             sys.exit(1)
 
     cn = connect(args.server, args.database, args.sql_user, args.sql_password)

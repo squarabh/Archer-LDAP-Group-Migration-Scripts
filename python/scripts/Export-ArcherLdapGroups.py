@@ -106,7 +106,7 @@ def main():
                g.default_home_dashboard_id, g.default_home_workspace_id
         FROM dbo.tblGroup g {where} ORDER BY g.group_id""")
     if not groups:
-        print("ERROR: no groups matched. Try --all/--include-system.", file=sys.stderr)
+        print("NOTICE: no groups matched (nothing exported). Try --all/--include-system.", file=sys.stderr)
         sys.exit(2)
 
     gids = [g["group_id"] for g in groups]
