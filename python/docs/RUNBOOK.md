@@ -12,6 +12,10 @@ never appear in this repo — see `../examples/example_export.json` for the form
 - **Take a verified backup of the TARGET instance database first.** Post-install
   rollback needs either manual reference removal or a DB restore — without a
   backup, option 3 of the reversion path does not exist.
+- **Freeze LDAP sync during the migration window.** Disable/suspend directory
+  synchronization on the source while exporting (sync mints new GUIDs, so an
+  export is a point-in-time snapshot) and do not sync the migrated names on
+  the target (sync would create duplicate same-name groups packages won't map to).
 - No downtime, no service restarts.
 
 ## 1. Configure

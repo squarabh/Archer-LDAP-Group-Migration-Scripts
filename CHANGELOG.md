@@ -2,6 +2,26 @@
 
 All notable changes to this project are recorded here. Dates are UTC.
 
+## [Unreleased]
+- Staging tables hardened: `#Src`/`#SrcHier` (and `#RollbackGuids`/`#RollbackEdges`)
+  carry primary keys so duplicate pastes fail fast; `#Src.group_name` sized to
+  `NVARCHAR(256)` to match `tblGroup`.
+- SQL Export emits only hierarchy edges with both endpoints in the LDAP set
+  (exact Python-importer parity for cross-boundary edges).
+- SQL Rollback accepts optional `#RollbackEdges` GUID pairs to scope hierarchy
+  deletion (Python parity); unscoped runs print a warning.
+- Python Import pre-flights rollback-journal writability before any DB work and
+  prints manual recovery data if the journal write ever fails post-commit.
+- Python Import forces `everyone=0` (a migrated row can never become the special
+  everyone group) and prints an explicit warning per `--fix-guids` rewrite.
+- Input-shape validation fails fast on malformed JSON entries; empty-export exit
+  unified as "nothing to do" (exit 2).
+- All SQL staging sections wrapped in TRY/CATCH: any bad pasted row aborts the
+  whole script before any real-table write (no more partial staging).
+- SQL Rollback deletion section is atomic (TRY/CATCH + transaction): a mid-way
+  FK failure rolls everything back with a clear ABORTED message instead of a
+  misleading COMPLETE with zero deletes.
+
 ## [1.0.0] - 2026-10-03
 
 Initial public release under `FSL-1.1-MIT`.

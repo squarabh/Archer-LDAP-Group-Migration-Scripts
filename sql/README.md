@@ -100,7 +100,12 @@ Revert needed?
 1. Open SSMS and connect to the **TARGET** Archer database (e.g., `ArcherTarget`).
 2. Open [`Import-ArcherLdapGroups.sql`](Import-ArcherLdapGroups.sql).
 3. Paste the copied rows into Section 3 (`#Src`), and the copied hierarchy rows
-   into Section 4 (`#SrcHier`, optional — leave empty if the source is flat):
+   into Section 4 (`#SrcHier`, optional — leave empty if the source is flat).
+   Both staging tables carry primary keys, so accidentally pasted duplicate rows
+   fail fast at staging with a clear error instead of corrupting the import.
+   Every staging block is additionally wrapped in `TRY/CATCH`: any bad pasted
+   row aborts the whole script before anything is written to real tables
+   (re-run from the top in a fresh window after fixing the paste):
    ```sql
    /* >>> PASTE ROWS FROM Export-ArcherLdapGroups.sql BELOW THIS LINE <<< */
    INSERT INTO #Src VALUES (N'Example Finance Group', 'AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA');
@@ -149,6 +154,9 @@ Once the verification confirms that all groups match:
 If you need to cancel the migration before the package is installed:
 1. Open [`Rollback-ArcherLdapGroups.sql`](Rollback-ArcherLdapGroups.sql) in SSMS connected to the TARGET database.
 2. Paste the GUIDs of the groups you wish to delete into Section 2 (`#RollbackGuids`).
+   Optionally paste known import-created `(parent_guid, child_guid)` pairs into
+   Section 2b (`#RollbackEdges`) to delete only those edges (Python parity);
+   otherwise every edge touching the groups is removed, with a printed warning.
 3. Execute (`F5`). Because no package objects reference the placeholders yet, the script safely deletes them.
 
 #### After Package Installation: **DIRECT ROLLBACK IS BLOCKED BY DESIGN**

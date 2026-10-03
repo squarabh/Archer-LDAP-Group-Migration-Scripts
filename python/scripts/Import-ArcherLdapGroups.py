@@ -146,6 +146,20 @@ def main():
         args.sql_password = getpass.getpass(f"SQL password for {args.sql_user}: ")
     args.journal = args.journal or (args.input + ".rollback.json")
 
+    # Pre-flight the journal location BEFORE any DB work: a journal that cannot
+    # be written would leave committed rows with no rollback trail.
+    jdir = os.path.dirname(os.path.abspath(args.journal)) or "."
+    try:
+        os.makedirs(jdir, exist_ok=True)
+        probe = os.path.join(jdir, ".journal_writability_probe")
+        with open(probe, "w") as f:
+            f.write("probe")
+        os.remove(probe)
+    except Exception as e:
+        print(f"ERROR: rollback journal directory is not writable: {jdir}: {e}\n"
+              "No changes made.", file=sys.stderr)
+        sys.exit(1)
+
     with open(args.input, encoding="utf-8") as f:
         data = json.load(f)
     groups = data.get("groups", [])
@@ -186,6 +200,9 @@ def main():
             cur.execute("SELECT group_id, guid FROM dbo.tblGroup WHERE group_name = ?", name)
             same = cur.fetchall()
             if same and args.fix_guids and not args.verify_only:
+                print(f"WARNING: --fix-guids rewrites packaging identity: '{name}' "
+                      f"(group_id={same[0][0]}) guid {same[0][1]} -> {guid}. "
+                      "Packages referencing the old GUID will stop mapping to it.")
                 cur.execute("UPDATE dbo.tblGroup SET guid=?, update_date=GETDATE(), update_login=? WHERE group_id=?",
                             guid, effective_login_id, same[0][0])
                 stats["guid_fixed"].append({"group_id": same[0][0], "name": name,
@@ -199,11 +216,13 @@ def main():
             if args.verify_only:
                 continue
             now = datetime.datetime.now()
+            # everyone is forced to 0: a migrated row must never become the
+            # special everyone group (a second everyone=1 has no unique guard).
             cur.execute("""INSERT INTO dbo.tblGroup (group_name, group_desc, create_date, create_login,
               update_date, update_login, everyone, guid, [system], distinguished_name, ldap_config_id)
               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
               name, g.get("group_desc"), now, effective_login_id, now, effective_login_id,
-              int(bool(g.get("everyone", 0))), guid, 0, None, None)
+              0, guid, 0, None, None)
             cur.execute("SELECT group_id FROM dbo.tblGroup WHERE guid=?", guid)
             stats["created"].append({"group_id": cur.fetchone()[0], "name": name, "guid": guid})
 
@@ -241,8 +260,17 @@ def main():
                    "created_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
                    "input": args.input, "created_groups": stats["created"],
                    "guid_fixes": stats["guid_fixed"], "added_edges": stats["hier_added"]}
-        with open(args.journal, "w", encoding="utf-8") as f:
-            json.dump(journal, f, indent=2)
+        try:
+            with open(args.journal, "w", encoding="utf-8") as f:
+                json.dump(journal, f, indent=2)
+        except Exception as e:
+            # Rows are already committed: print the recovery data so rollback
+            # can still be reconstructed manually instead of losing the trail.
+            print(f"ERROR: changes COMMITTED but journal could not be written "
+                  f"({args.journal}): {e}", file=sys.stderr)
+            print("MANUAL RECOVERY DATA (feed group_ids to Rollback or delete manually):")
+            print(json.dumps(journal, indent=2))
+            sys.exit(1)
         print(f"OK target={args.database}: matched={stats['matched']} created={len(stats['created'])} "
               f"guid_fixed={len(stats['guid_fixed'])} hierarchy_added={len(stats['hier_added'])}")
         print(f"Journal for rollback: {args.journal}")

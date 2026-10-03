@@ -57,10 +57,20 @@ CREATE TABLE #RollbackGuids (
    >>> PASTE GUIDs OF GROUPS TO REVERT BELOW THIS LINE <<<
    ---------------------------------------------------------------------------- */
 
+BEGIN TRY
+DECLARE @guid_paste_guard INT = 0; -- no-op: a TRY block must contain a statement even when nothing is pasted
 -- EXAMPLE PLACEHOLDERS (fictional GUIDs):
 -- INSERT INTO #RollbackGuids VALUES ('AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA');
 -- INSERT INTO #RollbackGuids VALUES ('BBBBBBBB-BBBB-4BBB-8BBB-BBBBBBBBBBBB');
 -- INSERT INTO #RollbackGuids VALUES ('CCCCCCCC-CCCC-4CCC-8CCC-CCCCCCCCCCCC');
+END TRY
+BEGIN CATCH
+    PRINT 'STAGING FAILED: a pasted GUID is duplicated or malformed.';
+    PRINT 'SQL Server error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ': ' + ERROR_MESSAGE();
+    PRINT 'Fix the pasted GUIDs and re-run from the top in a fresh window. No changes made.';
+    SET NOEXEC ON;
+    RETURN;
+END CATCH
 
 /* ----------------------------------------------------------------------------
    >>> END OF GUID LIST <<<
@@ -75,6 +85,38 @@ BEGIN
 END
 PRINT 'Loaded ' + CAST(@target_count AS VARCHAR(10)) + ' GUID(s) for rollback check.';
 PRINT '';
+
+-- 2b. (Optional) Scope hierarchy deletion to known import-created edges.
+-- Paste (parent_guid, child_guid) pairs here to delete ONLY those edges
+-- (Python-rollback parity). Leave empty to delete every edge touching the
+-- target groups (with a warning printed below).
+IF OBJECT_ID('tempdb..#RollbackEdges') IS NOT NULL DROP TABLE #RollbackEdges;
+CREATE TABLE #RollbackEdges (
+    parent_guid UNIQUEIDENTIFIER NOT NULL,
+    child_guid UNIQUEIDENTIFIER NOT NULL,
+    PRIMARY KEY (parent_guid, child_guid)
+);
+
+/* ----------------------------------------------------------------------------
+   >>> PASTE KNOWN EDGE GUID PAIRS BELOW THIS LINE (optional) <<<
+   ---------------------------------------------------------------------------- */
+
+BEGIN TRY
+DECLARE @edge_paste_guard INT = 0; -- no-op: a TRY block must contain a statement even when nothing is pasted
+/* (paste INSERT INTO #RollbackEdges ... lines here) */
+END TRY
+BEGIN CATCH
+    PRINT 'STAGING FAILED: a pasted edge is duplicated or malformed.';
+    PRINT 'SQL Server error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ': ' + ERROR_MESSAGE();
+    PRINT 'Fix the pasted edges and re-run from the top in a fresh window. No changes made.';
+    SET NOEXEC ON;
+    RETURN;
+END CATCH
+
+/* ----------------------------------------------------------------------------
+   >>> END OF EDGE LIST <<<
+   ---------------------------------------------------------------------------- */
+
 
 -- 3. Resolve Target Group IDs
 IF OBJECT_ID('tempdb..#TargetGroups') IS NOT NULL DROP TABLE #TargetGroups;
@@ -169,31 +211,60 @@ BEGIN
 END
 
 -- 5. Safe Deletion (No active references detected)
+-- All-or-nothing: any failure rolls EVERYTHING back so a blocked group delete
+-- can never leave edges half-removed (Python non-force parity).
 PRINT '----------------------------------------------------------------------------';
 PRINT '--- SAFE DELETION: ZERO BLOCKING REFERENCES DETECTED                     ---';
 PRINT '----------------------------------------------------------------------------';
 
-BEGIN TRANSACTION;
+BEGIN TRY
+    BEGIN TRANSACTION;
 
--- Clean up any hierarchy relationships first
-DELETE r
-FROM dbo.tblGroupRelationships r
-WHERE r.parent_group_id IN (SELECT group_id FROM #TargetGroups)
-   OR r.child_group_id IN (SELECT group_id FROM #TargetGroups);
-PRINT 'Deleted hierarchy relationships: ' + CAST(@@ROWCOUNT AS VARCHAR(10));
+    -- Clean up hierarchy relationships first: only staged edges when provided
+    -- (Python parity), otherwise every edge touching the target groups.
+    IF EXISTS (SELECT 1 FROM #RollbackEdges)
+    BEGIN
+        DELETE r
+        FROM dbo.tblGroupRelationships r
+        JOIN dbo.tblGroup pg ON pg.group_id = r.parent_group_id
+        JOIN dbo.tblGroup cg ON cg.group_id = r.child_group_id
+        JOIN #RollbackEdges e ON e.parent_guid = pg.guid AND e.child_guid = cg.guid
+        WHERE r.parent_group_id IN (SELECT group_id FROM #TargetGroups)
+           OR r.child_group_id IN (SELECT group_id FROM #TargetGroups);
+        PRINT 'Deleted staged hierarchy relationships: ' + CAST(@@ROWCOUNT AS VARCHAR(10));
+    END
+    ELSE
+    BEGIN
+        PRINT 'WARNING: no staged edges provided — deleting EVERY hierarchy edge touching the target groups.';
+        DELETE r
+        FROM dbo.tblGroupRelationships r
+        WHERE r.parent_group_id IN (SELECT group_id FROM #TargetGroups)
+           OR r.child_group_id IN (SELECT group_id FROM #TargetGroups);
+        PRINT 'Deleted hierarchy relationships: ' + CAST(@@ROWCOUNT AS VARCHAR(10));
+    END
 
--- Delete the placeholder groups
-DELETE g
-FROM dbo.tblGroup g
-JOIN #TargetGroups t ON t.group_id = g.group_id;
+    -- Delete the placeholder groups
+    DELETE g
+    FROM dbo.tblGroup g
+    JOIN #TargetGroups t ON t.group_id = g.group_id;
 
-DECLARE @deleted_groups INT = @@ROWCOUNT;
-PRINT 'Deleted placeholder groups: ' + CAST(@deleted_groups AS VARCHAR(10));
+    DECLARE @deleted_groups INT = @@ROWCOUNT;
+    PRINT 'Deleted placeholder groups: ' + CAST(@deleted_groups AS VARCHAR(10));
 
-COMMIT TRANSACTION;
+    COMMIT TRANSACTION;
 
-PRINT '';
-PRINT 'ROLLBACK COMPLETE: Successfully deleted ' + CAST(@deleted_groups AS VARCHAR(10)) + ' placeholder group(s).';
+    PRINT '';
+    PRINT 'ROLLBACK COMPLETE: Successfully deleted ' + CAST(@deleted_groups AS VARCHAR(10)) + ' placeholder group(s).';
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+    PRINT '';
+    PRINT 'ROLLBACK ABORTED: a delete failed part-way (e.g. an edge outside the staged list still references a group).';
+    PRINT 'SQL Server error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ': ' + ERROR_MESSAGE();
+    PRINT 'ALL partial work was rolled back — nothing was deleted. Remove the blocker and re-run.';
+    SET NOEXEC ON;
+    RETURN;
+END CATCH
 GO
 
 SET NOEXEC OFF;

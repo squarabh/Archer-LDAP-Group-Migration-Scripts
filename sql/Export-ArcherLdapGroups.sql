@@ -86,7 +86,8 @@ BEGIN
     PRINT '----------------------------------------------------------------------------';
 
     -- Generate hierarchy INSERTs keyed by GUID (stable across instances).
-    -- Mirrors the Python exporter: any edge touching the exported LDAP set.
+    -- Only edges with BOTH endpoints in the exported LDAP set are emitted,
+    -- exactly matching the Python exporter (cross-boundary edges are skipped).
     SELECT
         'INSERT INTO #SrcHier VALUES (''' +
         CAST(p.guid AS VARCHAR(36)) + ''', ''' +
@@ -95,7 +96,7 @@ BEGIN
     JOIN dbo.tblGroup p ON p.group_id = r.parent_group_id
     JOIN dbo.tblGroup c ON c.group_id = r.child_group_id
     WHERE (p.ldap_config_id IS NOT NULL AND p.[system] = 0 AND p.everyone = 0)
-       OR (c.ldap_config_id IS NOT NULL AND c.[system] = 0 AND c.everyone = 0)
+      AND (c.ldap_config_id IS NOT NULL AND c.[system] = 0 AND c.everyone = 0)
     ORDER BY p.group_name, c.group_name;
 
     PRINT '';

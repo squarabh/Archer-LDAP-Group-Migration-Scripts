@@ -65,10 +65,14 @@ GO
 -- 3. Staging Table: Paste Exported Groups Here
 IF OBJECT_ID('tempdb..#Src') IS NOT NULL DROP TABLE #Src;
 CREATE TABLE #Src (
-    group_name NVARCHAR(500) NOT NULL, 
-    guid UNIQUEIDENTIFIER NOT NULL
+    group_name NVARCHAR(256) NOT NULL,
+    guid UNIQUEIDENTIFIER NOT NULL PRIMARY KEY
 );
 
+-- Staging is guarded: any bad pasted row (duplicate GUID, malformed value)
+-- aborts the whole script BEFORE anything is written to real tables.
+BEGIN TRY
+DECLARE @src_paste_guard INT = 0; -- no-op: a TRY block must contain a statement even when nothing is pasted
 /* ----------------------------------------------------------------------------
    >>> PASTE ROWS FROM Export-ArcherLdapGroups.sql BELOW THIS LINE <<<
    ---------------------------------------------------------------------------- */
@@ -81,6 +85,14 @@ CREATE TABLE #Src (
 /* ----------------------------------------------------------------------------
    >>> END OF PASTED ROWS <<<
    ---------------------------------------------------------------------------- */
+END TRY
+BEGIN CATCH
+    PRINT 'STAGING FAILED: a pasted #Src row is invalid (duplicate GUID or bad value).';
+    PRINT 'SQL Server error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ': ' + ERROR_MESSAGE();
+    PRINT 'Fix the pasted rows and re-run from the top in a fresh window. No changes made.';
+    SET NOEXEC ON;
+    RETURN;
+END CATCH
 
 DECLARE @src_count INT = (SELECT COUNT(*) FROM #Src);
 IF @src_count = 0
@@ -96,9 +108,12 @@ PRINT '';
 IF OBJECT_ID('tempdb..#SrcHier') IS NOT NULL DROP TABLE #SrcHier;
 CREATE TABLE #SrcHier (
     parent_guid UNIQUEIDENTIFIER NOT NULL,
-    child_guid UNIQUEIDENTIFIER NOT NULL
+    child_guid UNIQUEIDENTIFIER NOT NULL,
+    PRIMARY KEY (parent_guid, child_guid)
 );
 
+BEGIN TRY
+DECLARE @hier_paste_guard INT = 0; -- no-op: a TRY block must contain a statement even when nothing is pasted
 /* ----------------------------------------------------------------------------
    >>> PASTE HIERARCHY ROWS FROM Export-ArcherLdapGroups.sql BELOW THIS LINE <<<
    (leave empty if the source has no hierarchy — edges are optional)
@@ -111,6 +126,14 @@ CREATE TABLE #SrcHier (
 /* ----------------------------------------------------------------------------
    >>> END OF PASTED HIERARCHY ROWS <<<
    ---------------------------------------------------------------------------- */
+END TRY
+BEGIN CATCH
+    PRINT 'STAGING FAILED: a pasted #SrcHier row is invalid (duplicate edge or bad GUID).';
+    PRINT 'SQL Server error ' + CAST(ERROR_NUMBER() AS VARCHAR(10)) + ': ' + ERROR_MESSAGE();
+    PRINT 'Fix the pasted rows and re-run from the top in a fresh window. No changes made.';
+    SET NOEXEC ON;
+    RETURN;
+END CATCH
 
 DECLARE @hier_count INT = (SELECT COUNT(*) FROM #SrcHier);
 PRINT 'Hierarchy payload: ' + CAST(@hier_count AS VARCHAR(10)) + ' edge(s) staged.';
