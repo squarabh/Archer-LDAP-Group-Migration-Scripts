@@ -64,7 +64,7 @@ By pre-creating local placeholder records in `dbo.tblGroup` using the **exact so
 - Once the package is installed, layouts, fields, access roles, and event actions bind foreign keys to `tblGroup.group_id`.
 - **All 24 foreign keys** referencing `dbo.tblGroup` in SQL Server are configured with `ON DELETE NO ACTION` (restrict).
 - Both the Python and SQL rollback utilities dynamically inspect `sys.foreign_keys`. If active references exist, they safely abort and print the exact blocking table names and record counts.
-- **Reversion Path:** To roll back post-installation, the Archer package must be uninstalled or the group references removed from the layout/application first, then the rollback utility can be re-run.
+- **Reversion Path:** To roll back post-installation, the group references must be removed from the layout/application manually first (Archer has no package uninstall), a pre-change backup package reinstalled to overwrite them, or the instance database restored from a pre-migration backup — then the rollback utility can be re-run.
 
 #### Identity Sequence Gaps
 - Deleting created rows leaves permanent gaps in `tblGroup.group_id` (`IDENTITY(1,1)`).

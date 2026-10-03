@@ -34,8 +34,18 @@ BLOCKED: created groups are now referenced (package likely installed):
   tblXEventActionGroup: [{'group_id': 271, 'rows': 1}]
 ```
 
-Revert path: uninstall the package / remove those authorizations first
-(they were created by the install, not by this toolkit), then re-run rollback.
+Revert path — Archer has no package uninstall, so pick one (references were
+created by the install, not by this toolkit):
+1. **Manual removal (surgical):** in the Archer UI, remove the group assignments
+   (field/layout permissions, access roles, event actions, notifications) that
+   point at the placeholder groups — or delete the installed application objects
+   — then re-run rollback.
+2. **Backup package reinstall:** install a package exported before the change so its
+   authorizations overwrite the installed ones, then remove any leftovers and
+   re-run rollback.
+3. **Database restore (full revert):** restore the instance database from a
+   pre-migration backup. This also removes the installed package content, so use
+   it when a complete return to the prior state is required.
 `--force` never deletes other objects' rows — it only still removes
 journal-created hierarchy edges.
 

@@ -157,9 +157,11 @@ BEGIN
     JOIN #TargetGroups t ON t.group_id = b.group_id;
 
     PRINT '';
-    PRINT 'REMEDIATION PATH:';
-    PRINT '1. In the Archer UI, uninstall the package or remove group assignments from layouts/roles.';
-    PRINT '2. Once dependencies are removed, re-run this script to delete the placeholders.';
+    PRINT 'REMEDIATION PATH (Archer has no package uninstall):';
+    PRINT '1. In the Archer UI, manually remove group assignments from layouts/roles/events,';
+    PRINT '   or reinstall a pre-change backup package to overwrite them.';
+    PRINT '2. Alternatively, restore the instance DB from a pre-migration backup (full revert).';
+    PRINT '3. Once dependencies are removed, re-run this script to delete the placeholders.';
     PRINT 'NO CHANGES WERE MADE TO THE DATABASE.';
     SET NOEXEC ON;
     RETURN;

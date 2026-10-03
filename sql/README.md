@@ -82,7 +82,7 @@ If you need to cancel the migration before the package is installed:
 - Once the package is installed, layouts, fields, access roles, and notifications bind foreign keys to `tblGroup.group_id`.
 - All 24 foreign keys referencing `dbo.tblGroup` in SQL Server are configured with `ON DELETE NO ACTION`.
 - [`Rollback-ArcherLdapGroups.sql`](Rollback-ArcherLdapGroups.sql) automatically scans `sys.foreign_keys`. If active references exist, it aborts without deleting any rows and prints the exact blocking table names and record counts.
-- **Reversion Path:** You must uninstall the package or remove group assignments from the application layouts first, then re-run the rollback script.
+- **Reversion Path (Archer has no package uninstall):** manually remove the group assignments from the application layouts/roles/events first, reinstall a pre-change backup package to overwrite them, or restore the instance database from a pre-migration backup — then re-run the rollback script.
 
 ---
 

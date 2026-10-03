@@ -8,7 +8,8 @@ Fails SAFE (no changes) when:
   - a created group is now referenced by package objects (e.g. install already
     ran: tblXEventActionGroup, tblXReportsGroups, tblXIVLayoutModuleGroupAuthorization, etc.).
     Uses dynamic sys.foreign_keys inspection to detect ALL 24+ Archer referencers.
-    Use --check-only to preview, or remove/uninstall those references first.
+    Use --check-only to preview, or remove those references first
+    (Archer has no package uninstall — see docs/ROLLBACK.md for reversion options).
     --force deletes the journal-created hierarchy edges but NEVER deletes other objects' rows.
   - auth/permission preflight fails (exit 3).
 
@@ -136,7 +137,8 @@ def main():
             print("BLOCKED: created groups are now referenced (package likely installed):")
             for t, rows in deps.items():
                 print(f"  {t}: {rows}")
-            print("Revert path: uninstall/remove those references first, then re-run rollback. "
+            print("Revert path: remove those references manually, reinstall a pre-change "
+                  "backup package, or restore the instance DB (see docs/ROLLBACK.md), "
                   "No changes made." + ("" if args.force else " (--force only affects hierarchy edges)"))
             if args.check_only:
                 print(f"CHECK-ONLY: would delete {len(edges)} edges, {len(created)} groups, "
