@@ -2,14 +2,6 @@
 
 All notable changes to this project are recorded here. Dates are UTC.
 
-## [Unreleased]
-- SQL path now migrates GUID-keyed hierarchy edges (export emits `#SrcHier`
-  lines; import recreates them), matching the Python importer.
-- Docs written observationally (no implementation references); terminology unified
-  on "placeholder"; reversion path corrected (Archer has no package uninstall).
-- Cross-platform path defaults; backup prerequisite, LDAP-sync interplay warning,
-  `--fix-guids` consequence note, and tested-versions matrix documented.
-
 ## [1.0.0] - 2026-10-03
 
 Initial public release under `FSL-1.1-MIT`.
@@ -22,8 +14,8 @@ Initial public release under `FSL-1.1-MIT`.
 - SQL sub-project: SSMS-ready export (group + GUID-keyed hierarchy `INSERT`s),
   guarded import (preflight checks, collision detection, hierarchy recreation),
   FK-aware rollback with dynamic `sys.foreign_keys` blocking detection.
-- Docs: architecture guide, per-project READMEs, exit-code contract, `CONTRIBUTING.md`,
-  `SECURITY.md`, `LICENSE.md`.
+- Docs: architecture guide, per-project READMEs, process diagrams, exit-code
+  contract, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE.md`.
 
 ### Fixed (pre-release hardening)
 - Import-SQL preflight batch could not compile (`RAISERROR` with function argument);
