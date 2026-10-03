@@ -154,5 +154,5 @@ version converts to MIT on the second anniversary of the date it is made availab
 
 Created and maintained by **[Sourabh Sharma](https://in.linkedin.com/in/squarabh)** —
 Archer GRC professional (7+ years on the platform, Archer Certified Administrator –
-Expert), currently with KPMG in Qatar. Built from real-world air-gapped Archer
+Expert). Built from real-world air-gapped Archer
 migration work, with the goal of making LDAP-dependent packages install anywhere.
